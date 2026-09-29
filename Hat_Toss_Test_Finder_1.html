@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hat Toss Test Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (≤ 980px) with a sticky chapter bar; each SPSS question is a "lab card" — question → decode → visual → clicks → output → answer.
+   Deliberately light-only (pastel beige), as requested. */
+:root{
+  --bg:#f5efe3; --paper:#fffdf8; --ink:#1f2b40; --muted:#5f6878; --line:#e4d9c3;
+  --gold:#c9a96e; --gold-deep:#8a6a2c; --gold-soft:#f6ebd2;
+  --num:#3f6fa8; --num-soft:#e3ecf7;      /* numeric (scale) variables */
+  --cat:#3d8a78; --cat-soft:#dff0ea;      /* categorical variables */
+  --grp:#7b5aa6; --grp-soft:#ece5f5;      /* groups */
+  --low:#7d93b8; --high:#d9825b;          /* High_low colours */
+  --ok:#2f8a4c; --ok-soft:#e1f2e6; --bad:#b9483b; --bad-soft:#f8e3df;
+  --display:"Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --body:"DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;margin:0}
+.wrap{max-width:980px;margin:0 auto;padding-inline:20px;padding-block:0 60px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(2.3rem,6vw,3.6rem);font-weight:600}
+h2{font-size:clamp(1.8rem,4vw,2.4rem);font-weight:600;margin-bottom:6px}
+h3{font-size:1.45rem;font-weight:600}
+p{margin:0 0 10px;max-width:68ch}
+.eyebrow{font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-deep);font-weight:700}
+.lede{color:var(--muted);font-size:1.05rem}
+section{padding-block:40px 10px;border-bottom:1px solid var(--line)}
+/* nav */
+nav.chap{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+nav.chap .in{max-width:980px;margin:0 auto;padding:8px 20px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+nav.chap a{white-space:nowrap;text-decoration:none;color:var(--ink);font-size:.85rem;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--paper)}
+nav.chap a:hover,nav.chap a:focus-visible{border-color:var(--gold);outline:none;background:var(--gold-soft)}
+/* hero */
+.hero{padding-block:44px 30px;display:grid;grid-template-columns:1.25fr 1fr;gap:28px;align-items:center}
+.hero > *{min-width:0}
+@media (max-width:760px){.hero{grid-template-columns:1fr}}
+.hero p.lede{margin-top:12px}
+/* generic blocks */
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid2 > *{min-width:0}
+@media (max-width:760px){.grid2{grid-template-columns:1fr}}
+.key{background:linear-gradient(180deg,#fbf3df,#f6e8c8);border:1.5px solid var(--gold);border-radius:14px;padding:16px 20px;margin:18px 0;display:flex;gap:14px;align-items:flex-start}
+.key .star{font-size:1.6rem;color:var(--gold-deep);line-height:1}
+.key b.lab{display:block;font-size:.72rem;letter-spacing:.14em;color:var(--gold-deep);text-transform:uppercase}
+.key p{font-family:var(--display);font-size:1.35rem;line-height:1.3;margin:2px 0 0;font-weight:600}
+.hook,.friend,.plain,.trap{border-radius:12px;padding:12px 16px;margin:10px 0}
+.hook{background:var(--gold-soft);border:1px dashed var(--gold)}
+.friend{background:var(--num-soft)}
+.plain{background:var(--cat-soft)}
+.trap{background:var(--bad-soft);border-left:4px solid var(--bad)}
+.hook > b,.friend > b,.plain > b,.trap > b{display:block;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
+.hook p,.friend p,.plain p,.trap p{margin:0}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:999px}
+.t-desc{background:var(--cat-soft);color:var(--cat)} .t-test{background:var(--bad-soft);color:var(--bad)}
+/* highlighter */
+.hv{background:var(--num-soft);color:var(--num);border-bottom:2px solid var(--num);padding:0 3px;border-radius:3px;font-weight:600}
+.hg{background:var(--grp-soft);color:var(--grp);border-bottom:2px solid var(--grp);padding:0 3px;border-radius:3px;font-weight:600}
+.hc{background:var(--gold-soft);color:var(--gold-deep);border-bottom:2px solid var(--gold);padding:0 3px;border-radius:3px;font-weight:700}
+.hf{background:#eceae4;color:#555;border-bottom:2px dotted #999;padding:0 3px;border-radius:3px}
+.legend{display:flex;flex-wrap:wrap;gap:8px;font-size:.85rem;margin:8px 0}
+/* tables */
+.tw{overflow-x:auto;margin:10px 0}
+table{border-collapse:collapse;width:100%;font-size:.9rem;background:var(--paper)}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:#efe6d3;font-weight:700}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:.85rem}
+tr.hl td,td.hl{background:#fff1bf;font-weight:700}
+/* buttons */
+button{font:inherit;cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:8px 14px;border-radius:10px;font-size:.9rem;transition:transform .12s, background .12s}
+.btn:hover{background:var(--gold-soft);border-color:var(--gold)}
+.btn:focus-visible{outline:2px solid var(--gold-deep);outline-offset:2px}
+.btn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.good{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.btn.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.demo{background:var(--paper);border:1.5px solid var(--ink);border-radius:16px;padding:18px 20px;margin:20px 0;box-shadow:4px 4px 0 var(--gold)}
+.demo .dh{display:flex;gap:10px;align-items:baseline;margin-bottom:8px;flex-wrap:wrap}
+.demo .dh span.no{font-family:var(--mono);font-size:.75rem;background:var(--ink);color:#fff;padding:2px 8px;border-radius:6px}
+.demo h3{font-size:1.35rem}
+.fb{margin-top:10px;padding:10px 14px;border-radius:10px;font-size:.95rem}
+.fb.ok{background:var(--ok-soft);color:#1d5b31} .fb.no{background:var(--bad-soft);color:#7d2a20}
+svg{display:block;max-width:100%;height:auto}
+svg text{font-family:var(--body)} svg text:not([fill]){fill:var(--ink)}
+.cap{font-size:.82rem;color:var(--muted);font-style:italic;margin-top:4px}
+/* SPSS click path */
+.path{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}
+.path span{background:#e9eef6;border:1px solid #c9d4e6;border-radius:6px;padding:3px 9px;font-size:.84rem;font-family:var(--mono)}
+.path i{color:var(--muted);font-style:normal}
+ol.steps{margin:6px 0 10px;padding-left:22px} ol.steps li{margin-bottom:4px}
+/* question cards */
+.q{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:22px;margin:26px 0}
+.qhead{display:flex;gap:14px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.qnum{font-family:var(--display);font-size:2.6rem;font-weight:700;color:var(--gold);line-height:1;width:54px}
+.qtext{font-size:1.08rem;background:#faf6ec;border-radius:12px;padding:14px 16px;border:1px solid var(--line)}
+.sub{font-family:var(--display);font-size:1.25rem;font-weight:600;margin:18px 0 6px;color:var(--ink)}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.three > div{background:#f8f4ea;border-radius:10px;padding:10px 12px;font-size:.9rem;min-width:0}
+.three b{display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep)}
+@media (max-width:640px){.three{grid-template-columns:1fr}}
+.answer{display:flex;gap:14px;align-items:center;background:var(--ok-soft);border:1.5px solid var(--ok);border-radius:12px;padding:12px 16px;margin:12px 0}
+.answer .big{font-family:var(--display);font-size:2rem;font-weight:700;color:#1d5b31;line-height:1}
+.answer small{display:block;color:#1d5b31}
+input[type=range]{width:100%;accent-color:var(--gold-deep)}
+label.sl{display:block;font-size:.88rem;margin-top:8px}
+.readout{font-family:var(--mono);font-size:.95rem;background:#f3eee2;border-radius:8px;padding:8px 12px;margin-top:8px}
+pre.syn{background:#f3eee2;border:1px solid var(--line);border-radius:10px;padding:14px;font-family:var(--mono);font-size:.82rem;overflow-x:auto;white-space:pre}
+.varcards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.varcards > div{min-width:0}
+@media (max-width:760px){.varcards{grid-template-columns:1fr 1fr}}
+.vc{border-radius:12px;padding:12px;border:1px solid var(--line);background:var(--paper)}
+.vc code{font-family:var(--mono);font-weight:500;font-size:.9rem}
+.vc .choices{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.vc .choices .btn{padding:5px 9px;font-size:.8rem}
+.scen{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0;background:#fcfaf4}
+.scen p{margin:0 0 8px}
+.score{font-family:var(--mono);font-size:.9rem;color:var(--muted)}
+footer{padding-block:30px;color:var(--muted);font-size:.85rem}
+</style>
+</head><body>
+
+<nav class="chap" aria-label="Chapters"><div class="in">
+  <a href="#story">🎓 1 · The story</a>
+  <a href="#decode">🔎 2 · Decode the question</a>
+  <a href="#finder">🧭 3 · Find the test</a>
+  <a href="#solve">🧪 4 · Solve Q1–Q8</a>
+  <a href="#practice">🎯 5 · Mixed practice</a>
+  <a href="#sheet">✅ 6 · Answer sheet</a>
+</div></nav>
+
+<div class="wrap">
+
+<header class="hero">
+  <div>
+    <div class="eyebrow">Statistics · SPSS meeting 2 · NisN dataset</div>
+    <h1>Hat Toss Test Finder</h1>
+    <p class="lede">How to read an SPSS exam question, spot what it wants, choose the right procedure, and click your way to the answer. Built on the real data from <code>NisN_SPSSmeeting2.sav</code> (100 students).</p>
+    <div class="key" style="margin-top:18px">
+      <div class="star">★</div>
+      <div><b class="lab">Key insight</b><p>The type of variable you are analysing picks the test for you: numbers get averaged (means, t-tests); categories get counted (proportions, crosstabs, chi-square).</p></div>
+    </div>
+  </div>
+  <div class="card" aria-label="Overview figure">
+    <svg id="heroSvg" viewBox="0 0 360 260" role="img" aria-label="Four study groups of 25 students, coloured by whether they threw their hat high or low"></svg>
+    <div class="legend"><span>● <span style="color:var(--high);font-weight:700">High</span> (43)</span><span>● <span style="color:var(--low);font-weight:700">Low</span> (57)</span></div>
+    <div class="cap">Every dot is one real student in the dataset.</div>
+  </div>
+</header>
+
+<!-- ============ 1 STORY ============ -->
+<section id="story">
+  <div class="eyebrow">Chapter 1</div>
+  <h2>🎓 The story, in plain words</h2>
+  <p>On 23 September 2015, first-year students who earned 60 ECTS got a diploma and a hat (baret). After the photo they threw the hat in the air. The researchers wrote down four things about each of 100 students:</p>
+  <div class="varcards" id="varcards"></div>
+  <div class="demo" id="demo1">
+    <div class="dh"><span class="no">DEMO 1</span><h3>🏷️ Label or number?</h3></div>
+    <p>Click how you would treat each variable above. This one decision drives almost every test choice.</p>
+    <div id="d1fb" class="fb" hidden></div>
+  </div>
+  <div class="grid2">
+    <div class="plain"><b>🔍 In plain words</b><p><strong>Study</strong> and <strong>High_low</strong> are labels: you can only count how many people are in each box. <strong>Earnings</strong> and <strong>Earnings_lastyear</strong> are amounts of money: you can add them up and take an average.</p></div>
+    <div class="plain"><b>👥 One more thing to notice</b><p>Earnings and Earnings_lastyear were measured on the <strong>same 100 students</strong>. That makes them a <em>pair</em> of measurements. Remember this for Question 4.</p></div>
+  </div>
+  <div class="hook"><b>🪝 Memory hook</b><p>A label is a name badge; a number is a price tag. You can count name badges, but you can only average price tags.</p></div>
+</section>
+
+<!-- ============ 2 DECODE ============ -->
+<section id="decode">
+  <div class="eyebrow">Chapter 2</div>
+  <h2>🔎 How to decode what a question is asking</h2>
+  <p>Every question in this practice set is built from the same four parts. Colour them in your head (or with real highlighters) before you touch SPSS.</p>
+  <div class="card">
+    <div class="legend">
+      <span class="hc">what to calculate</span>
+      <span class="hv">which variable</span>
+      <span class="hg">which group</span>
+      <span class="hf">format</span>
+    </div>
+    <p class="qtext" style="margin-top:10px">What is the <span class="hc">standard deviation</span> of <span class="hv">earnings last year</span> in <span class="hg">the group that threw their baret up low</span>? <span class="hf">(3 decimals)</span></p>
+    <svg viewBox="0 0 900 170" role="img" aria-label="Question anatomy diagram">
+      <g font-size="14">
+        <rect x="10" y="20" width="200" height="120" rx="12" fill="#f6ebd2" stroke="#c9a96e"/>
+        <text x="110" y="50" text-anchor="middle" font-weight="700" fill="#8a6a2c">1 · WHAT?</text>
+        <text x="110" y="78" text-anchor="middle">standard deviation</text>
+        <text x="110" y="104" text-anchor="middle" fill="#5f6878" font-size="12">= describe, no test</text>
+        <rect x="235" y="20" width="200" height="120" rx="12" fill="#e3ecf7" stroke="#3f6fa8"/>
+        <text x="335" y="50" text-anchor="middle" font-weight="700" fill="#3f6fa8">2 · WHICH VARIABLE?</text>
+        <text x="335" y="78" text-anchor="middle">Earnings_lastyear</text>
+        <text x="335" y="104" text-anchor="middle" fill="#5f6878" font-size="12">not Earnings!</text>
+        <rect x="460" y="20" width="200" height="120" rx="12" fill="#ece5f5" stroke="#7b5aa6"/>
+        <text x="560" y="50" text-anchor="middle" font-weight="700" fill="#7b5aa6">3 · WHICH GROUP?</text>
+        <text x="560" y="78" text-anchor="middle">High_low = Low (0)</text>
+        <text x="560" y="104" text-anchor="middle" fill="#5f6878" font-size="12">split by High_low</text>
+        <rect x="685" y="20" width="200" height="120" rx="12" fill="#eceae4" stroke="#999"/>
+        <text x="785" y="50" text-anchor="middle" font-weight="700" fill="#555">4 · FORMAT?</text>
+        <text x="785" y="78" text-anchor="middle">3 decimals</text>
+        <text x="785" y="104" text-anchor="middle" fill="#5f6878" font-size="12">37.378, not 37.38</text>
+        <path d="M212 80 L230 80" stroke="#1f2b40" stroke-width="2" marker-end="url(#ar)"/><path d="M437 80 L455 80" stroke="#1f2b40" stroke-width="2" marker-end="url(#ar)"/><path d="M662 80 L680 80" stroke="#1f2b40" stroke-width="2" marker-end="url(#ar)"/>
+      </g>
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#1f2b40"/></marker></defs>
+    </svg>
+  </div>
+
+  <h3 style="margin-top:26px">🗝️ Keyword dictionary</h3>
+  <p>The words in part 1 ("what to calculate") tell you if you only need to <strong>describe</strong> the data or run a <strong>test</strong>.</p>
+  <div class="tw"><table>
+    <thead><tr><th>If you read…</th><th>Type</th><th>It means</th><th>SPSS menu</th></tr></thead>
+    <tbody>
+      <tr><td>"what is the <b>mean</b> / <b>standard deviation</b> … for group X"</td><td><span class="tag t-desc">Describe</span></td><td>An average or spread of a number, per group</td><td>Analyze › Compare Means › Means</td></tr>
+      <tr><td>"what is the <b>proportion</b> / percentage of…"</td><td><span class="tag t-desc">Describe</span></td><td>Count one category, divide by the total</td><td>Analyze › Descriptive Statistics › Frequencies</td></tr>
+      <tr><td>"<b>relative risk</b>", "% of group A vs group B"</td><td><span class="tag t-desc">Describe</span></td><td>Divide two row percentages</td><td>Analyze › Descriptive Statistics › Crosstabs (Row %)</td></tr>
+      <tr><td>"<b>if there were no relation</b> … <b>expected number</b>"</td><td><span class="tag t-desc">Describe</span></td><td>Expected count from chi-square logic</td><td>Crosstabs › Cells › Expected</td></tr>
+      <tr><td>"<b>compare</b> group A and group B in terms of [number]"</td><td><span class="tag t-test">Test</span></td><td>Two different groups, one number</td><td>Independent-Samples T Test</td></tr>
+      <tr><td>"this year vs last year", "before vs after" <b>(same people)</b></td><td><span class="tag t-test">Test</span></td><td>Two measurements per person</td><td>Paired-Samples T Test</td></tr>
+      <tr><td>"somebody <b>claims</b> X% … <b>is this person right?</b>"</td><td><span class="tag t-test">Test</span></td><td>One proportion against a claimed value</td><td>Legacy Dialogs › Chi-square (or Binomial)</td></tr>
+      <tr><td>"<b>test statistic</b>", "<b>p-value</b>", "<b>significant</b>", "<b>reject</b>"</td><td><span class="tag t-test">Test</span></td><td>Always a statistical test</td><td>depends on the variables</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="demo" id="demo2">
+    <div class="dh"><span class="no">DEMO 2</span><h3>🗳️ Describe or test?</h3><span class="score" id="d2score"></span></div>
+    <p>New questions about the same dataset. Decide for each one, then look at which word gave it away.</p>
+    <div id="d2list"></div>
+  </div>
+
+  <div class="friend"><b>🗣️ Explain it to a friend</b><p>"Before I open SPSS, I underline three things: what I have to calculate, which variable, and which group. If the question asks for a p-value, a test statistic or whether something is different, it's a test. If it just asks 'what is the mean or proportion', I only describe."</p></div>
+  <div class="hook"><b>🪝 Memory hook</b><p>A question is a recipe card: <em>dish</em> (what to calculate), <em>ingredient</em> (variable), <em>for whom</em> (group), <em>plating</em> (decimals).</p></div>
+</section>
+
+<!-- ============ 3 FINDER ============ -->
+<section id="finder">
+  <div class="eyebrow">Chapter 3</div>
+  <h2>🧭 Three questions that find the test</h2>
+  <p>Once you know it is a test, ask yourself three things in this order. The map below shows every route used in this practice set.</p>
+  <div class="card tw" style="padding:12px">
+    <svg viewBox="0 0 900 430" role="img" aria-label="Decision tree for choosing an SPSS procedure" style="min-width:640px">
+      <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#5f6878"/></marker></defs>
+      <g font-size="13" stroke-width="1.4">
+        <rect x="300" y="10" width="300" height="46" rx="23" fill="#f6ebd2" stroke="#c9a96e" stroke-width="2"/>
+        <text x="450" y="38" text-anchor="middle" fill="#1f2b40" font-weight="700" font-size="15">Q1 · Describe or test?</text>
+        <path d="M360 56 L190 100" stroke="#5f6878" marker-end="url(#ar2)" fill="none"/>
+        <path d="M540 56 L650 100" stroke="#5f6878" marker-end="url(#ar2)" fill="none"/>
+        <text x="245" y="72" fill="#5f6878" font-style="italic">"what is the…"</text>
+        <text x="610" y="72" fill="#5f6878" font-style="italic">"compare / p-value / claim"</text>
+        <rect x="40" y="102" width="300" height="130" rx="12" fill="#dff0ea" stroke="#3d8a78"/>
+        <text x="190" y="126" text-anchor="middle" font-weight="700" fill="#3d8a78">DESCRIBE</text>
+        <text x="58" y="152">Number → mean / SD per group</text><text x="58" y="170" fill="#5f6878" font-size="12">Compare Means › Means (Q1, Q2)</text>
+        <text x="58" y="194">Category → proportion</text><text x="58" y="212" fill="#5f6878" font-size="12">Frequencies (Q5) · Crosstabs (Q6, Q7)</text>
+        <rect x="520" y="102" width="260" height="46" rx="23" fill="#f6ebd2" stroke="#c9a96e" stroke-width="2"/>
+        <text x="650" y="130" text-anchor="middle" fill="#1f2b40" font-weight="700" font-size="15">Q2 · Outcome variable?</text>
+        <path d="M600 148 L520 196" stroke="#5f6878" marker-end="url(#ar2)" fill="none"/>
+        <path d="M710 148 L790 196" stroke="#5f6878" marker-end="url(#ar2)" fill="none"/>
+        <rect x="420" y="198" width="190" height="42" rx="10" fill="#e3ecf7" stroke="#3f6fa8"/>
+        <text x="515" y="224" text-anchor="middle" font-weight="700" fill="#3f6fa8">📏 Number (Earnings)</text>
+        <rect x="700" y="198" width="190" height="42" rx="10" fill="#dff0ea" stroke="#3d8a78"/>
+        <text x="795" y="224" text-anchor="middle" font-weight="700" fill="#3d8a78">🏷️ Category (High_low)</text>
+        <path d="M515 240 L515 268" stroke="#5f6878" marker-end="url(#ar2)"/>
+        <rect x="385" y="270" width="260" height="46" rx="23" fill="#f6ebd2" stroke="#c9a96e" stroke-width="2"/>
+        <text x="515" y="298" text-anchor="middle" fill="#1f2b40" font-weight="700" font-size="15">Q3 · Same people or different?</text>
+        <path d="M460 316 L330 352" stroke="#5f6878" marker-end="url(#ar2)" fill="none"/>
+        <path d="M570 316 L610 352" stroke="#5f6878" marker-end="url(#ar2)" fill="none"/>
+        <rect x="200" y="354" width="250" height="66" rx="12" fill="#fff1bf" stroke="#c9a96e"/>
+        <text x="325" y="378" text-anchor="middle" font-weight="700">Different people, 2 groups</text>
+        <text x="325" y="400" text-anchor="middle">→ Independent-samples t-test (Q3)</text>
+        <rect x="480" y="354" width="230" height="66" rx="12" fill="#fff1bf" stroke="#c9a96e"/>
+        <text x="595" y="378" text-anchor="middle" font-weight="700">Same people, 2 measures</text>
+        <text x="595" y="400" text-anchor="middle">→ Paired-samples t-test (Q4)</text>
+        <path d="M795 240 L795 350" stroke="#5f6878" marker-end="url(#ar2)"/>
+        <rect x="725" y="354" width="170" height="66" rx="12" fill="#fff1bf" stroke="#c9a96e"/>
+        <text x="810" y="376" text-anchor="middle" font-weight="700">vs a claimed %</text>
+        <text x="810" y="396" text-anchor="middle">→ χ² goodness-of-fit</text>
+        <text x="810" y="412" text-anchor="middle" font-size="12" fill="#5f6878">or Binomial (Q8)</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="demo" id="demo3">
+    <div class="dh"><span class="no">DEMO 3</span><h3>🧭 Test finder wizard</h3></div>
+    <p>Think of any question and click through. The wizard tells you the SPSS procedure.</p>
+    <div id="wiz"></div>
+  </div>
+
+  <h3 style="margin-top:24px">👥 Independent vs paired, side by side</h3>
+  <div class="grid2">
+    <div class="card">
+      <svg viewBox="0 0 320 150" role="img" aria-label="Independent groups: two separate sets of people">
+        <text x="160" y="18" text-anchor="middle" font-weight="700" font-size="14">Independent: two different crowds</text>
+        <g id="indepDots"></g>
+        <text x="80" y="140" text-anchor="middle" font-size="12" fill="#7d93b8" font-weight="700">Low throwers (57)</text>
+        <text x="240" y="140" text-anchor="middle" font-size="12" fill="#d9825b" font-weight="700">High throwers (43)</text>
+      </svg>
+    </div>
+    <div class="card">
+      <svg viewBox="0 0 320 150" role="img" aria-label="Paired: same people measured twice">
+        <text x="160" y="18" text-anchor="middle" font-weight="700" font-size="14">Paired: one crowd, measured twice</text>
+        <g id="pairDots"></g>
+        <text x="80" y="140" text-anchor="middle" font-size="12" font-weight="700" fill="#3f6fa8">Last year</text>
+        <text x="240" y="140" text-anchor="middle" font-size="12" font-weight="700" fill="#3f6fa8">This year</text>
+      </svg>
+    </div>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th>Element</th><th>Independent-samples t-test</th><th>Paired-samples t-test</th></tr></thead>
+    <tbody>
+      <tr><td>Question shape</td><td>"Compare group A and group B on [number]"</td><td>"Is [number] at time 1 different from time 2?"</td></tr>
+      <tr><td>In SPSS you give</td><td>1 test variable + 1 grouping variable</td><td>2 variables as a pair</td></tr>
+      <tr><td>People</td><td>Each person is in one group only</td><td>Each person gives both scores</td></tr>
+      <tr><td>Extra check</td><td>Levene's test → pick the right row</td><td>None</td></tr>
+      <tr><td>In this set</td><td>Q3: Earnings by High_low</td><td>Q4: Earnings vs Earnings_lastyear</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="demo" id="demo4">
+    <div class="dh"><span class="no">DEMO 4</span><h3>👥 Same people or different people?</h3><span class="score" id="d4score"></span></div>
+    <div id="d4list"></div>
+  </div>
+  <div class="hook"><b>🪝 Memory hook</b><p>Paired is a before-and-after photo of the same face. Independent is two different class photos.</p></div>
+</section>
+
+<!-- ============ 4 SOLVE ============ -->
+<section id="solve">
+  <div class="eyebrow">Chapter 4</div>
+  <h2>🧪 The 8 questions, solved step by step</h2>
+  <p>Each card follows the same route: read and colour the question → say it in plain words → pick the analysis → click in SPSS → find the number in the output.</p>
+  <div id="qs"></div>
+</section>
+
+<!-- ============ 5 PRACTICE ============ -->
+<section id="practice">
+  <div class="eyebrow">Chapter 5</div>
+  <h2>🎯 Mixed practice: pick the procedure</h2>
+  <p>On the exam the topics come mixed. These new questions use the same dataset. Choose the SPSS procedure for each one.</p>
+  <div class="demo" id="demo8">
+    <div class="dh"><span class="no">DEMO 8</span><h3>🎯 Exam-style mix</h3><span class="score" id="d8score"></span></div>
+    <div id="d8list"></div>
+  </div>
+</section>
+
+<!-- ============ 6 SHEET ============ -->
+<section id="sheet">
+  <div class="eyebrow">Chapter 6</div>
+  <h2>✅ Answer sheet</h2>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>Procedure</th><th class="n">Answer</th><th>Your handwritten answer</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Means: Earnings by Study</td><td class="n">86.464</td><td>–</td></tr>
+      <tr><td>2</td><td>Means: Earnings_lastyear by High_low (Low row)</td><td class="n">37.378</td><td style="color:var(--bad)">30.637 ✗ (this year's SD)</td></tr>
+      <tr><td>3</td><td>Independent-samples t-test</td><td class="n">t = −0.84</td><td style="color:var(--bad)">0.756 ✗</td></tr>
+      <tr><td>4</td><td>Paired-samples t-test</td><td class="n">p = .245</td><td style="color:var(--ok)">.245 ✓</td></tr>
+      <tr><td>5</td><td>Frequencies: High_low</td><td class="n">0.43</td><td>–</td></tr>
+      <tr><td>6</td><td>Crosstabs row %: .400 / .360</td><td class="n">RR = 1.111</td><td>–</td></tr>
+      <tr><td>7</td><td>Crosstabs expected count</td><td class="n">14.3</td><td>–</td></tr>
+      <tr><td>8</td><td>χ² goodness-of-fit (40 / 60)</td><td class="n">p = .001</td><td>–</td></tr>
+    </tbody>
+  </table></div>
+  <h3 style="margin-top:20px">⌨️ All eight in SPSS syntax</h3>
+  <div class="row" style="margin:8px 0"><button class="btn" id="copySyn">Copy syntax</button><span id="copyMsg" class="score"></span></div>
+<pre class="syn" id="syn">* Q1 and Q2 (descriptives per group).
+MEANS TABLES=Earnings BY Study /CELLS=MEAN COUNT STDDEV.
+MEANS TABLES=Earnings_lastyear BY High_low /CELLS=MEAN COUNT STDDEV.
+* Q3 independent-samples t-test.
+T-TEST GROUPS=High_low(0 1) /VARIABLES=Earnings.
+* Q4 paired-samples t-test.
+T-TEST PAIRS=Earnings WITH Earnings_lastyear (PAIRED).
+* Q5 proportion.
+FREQUENCIES VARIABLES=High_low.
+* Q6 and Q7 crosstab with row % and expected counts.
+CROSSTABS /TABLES=Study BY High_low /CELLS=COUNT EXPECTED ROW.
+* Q8 chi-square goodness-of-fit against 40% Low / 60% High.
+NPAR TESTS /CHISQUARE=High_low /EXPECTED=40 60.</pre>
+  <div class="key"><div class="star">★</div><div><b class="lab">Exam habit</b><p>Underline the variable, circle the group, box the decimals. Two of your three handwritten slips came from reading the wrong variable or the wrong cell, not from choosing the wrong test.</p></div></div>
+</section>
+
+<footer>Numbers computed from NisN_SPSSmeeting2.sav (N = 100). Outputs shown are reconstructions of the SPSS tables with the same values.</footer>
+</div>
+
+<script>
+const D=[[1,0,72.69,23.32],[1,1,98.88,100.77],[1,1,91.73,51.04],[1,0,89.19,96.85],[1,0,44.32,39.13],[1,1,46.99,72.79],[1,0,90.48,77.81],[1,0,149.02,169.22],[1,1,94.4,98.5],[1,1,90.49,60.44],[1,0,89.79,101.04],[1,0,65.19,80.06],[1,1,142.82,131.44],[1,0,73.84,65.07],[1,0,86.58,66.32],[1,0,46.44,79.68],[1,1,54.28,33.68],[1,1,130.39,134.96],[1,0,122.05,97.19],[1,0,117.52,99.16],[1,0,100.43,130.71],[1,0,73.59,53.9],[1,1,145.5,182.57],[1,0,92.01,81.31],[1,1,99.56,71.24],[2,0,140.91,129.25],[2,0,93.58,147.54],[2,0,90.44,96.58],[2,0,120.86,139.01],[2,0,70.58,95.5],[2,0,99.9,117.41],[2,1,131.73,136.16],[2,0,58.46,54.1],[2,1,91.58,115.16],[2,0,76.61,50.23],[2,1,90.56,84.69],[2,0,65.83,73.38],[2,0,134.42,177.15],[2,1,140.64,161.03],[2,0,63.33,65.08],[2,1,98.99,66.06],[2,1,111.99,124.23],[2,1,100.79,64.97],[2,0,112.2,112.14],[2,1,103.82,92.38],[2,0,90.46,87.83],[2,1,124.79,97.02],[2,0,101.98,127.09],[2,0,101.78,116.27],[2,0,109.23,79.66],[3,0,64.21,64.04],[3,1,28.22,28.51],[3,1,123.83,96.65],[3,1,132.25,122.23],[3,0,112.28,150.06],[3,0,70.9,88.42],[3,0,86.49,65.64],[3,0,170.39,170.83],[3,1,79.8,76.02],[3,0,85.44,130.83],[3,1,131.8,120.34],[3,0,129.08,71.79],[3,1,66.57,12.59],[3,0,152.83,159.47],[3,1,114.41,111.17],[3,0,80.07,101.97],[3,1,96.68,75.43],[3,0,134.14,80.86],[3,0,131.1,131.62],[3,0,36.23,50.5],[3,0,151.3,130.2],[3,1,86.7,97.83],[3,0,113.87,90.0],[3,0,97.57,81.21],[3,0,57.87,22.72],[4,1,126.11,167.97],[4,1,85.74,146.67],[4,1,72.89,54.02],[4,1,40.34,21.02],[4,1,122.89,103.71],[4,0,87.57,60.68],[4,1,75.1,112.36],[4,0,74.04,45.09],[4,0,38.65,17.6],[4,0,85.72,73.1],[4,0,41.13,87.87],[4,1,48.35,11.52],[4,0,111.22,73.58],[4,1,121.28,175.09],[4,1,83.09,41.22],[4,1,111.46,64.77],[4,1,150.52,105.96],[4,0,102.3,105.36],[4,1,122.19,120.41],[4,1,59.99,36.85],[4,0,68.91,127.29],[4,0,69.01,102.7],[4,1,93.22,97.89],[4,0,107.81,98.91],[4,1,62.07,17.69]]; // [study, high(1)/low(0), earnings, earnings_lastyear]
+const STUDY=["","Psychology","Pedagogical Sciences","Sociology","Administration"];
+const NS="http://www.w3.org/2000/svg";
+const C={ink:"#1f2b40",muted:"#5f6878",gold:"#c9a96e",goldD:"#8a6a2c",low:"#7d93b8",high:"#d9825b",num:"#3f6fa8",line:"#e4d9c3",ok:"#2f8a4c",bad:"#b9483b"};
+function el(tag,attrs={},parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+function txt(parent,x,y,s,a={}){const t=el("text",Object.assign({x,y},a),parent);t.textContent=s;return t}
+const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
+const sd=a=>{const m=mean(a);return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/(a.length-1))};
+function erf(x){const s=Math.sign(x);x=Math.abs(x);const t=1/(1+0.3275911*x);const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return s*y}
+const chiP1=chi=>1-erf(Math.sqrt(chi/2)); // df = 1
+const f3=v=>v.toFixed(3);
+
+/* ---------- hero dots ---------- */
+(function(){const s=document.getElementById("heroSvg");
+  for(let st=1;st<=4;st++){const rows=D.filter(r=>r[0]===st).sort((a,b)=>b[1]-a[1]);
+    const y0=18+(st-1)*62; txt(s,0,y0+6,STUDY[st],{"font-size":12,"font-weight":700,fill:C.ink});
+    const hi=rows.filter(r=>r[1]).length; txt(s,360,y0+6,hi+" of 25 high",{"font-size":11,fill:C.muted,"text-anchor":"end"});
+    rows.forEach((r,i)=>{el("circle",{cx:8+(i%13)*13+ (i>=13?6:0),cy:y0+20+Math.floor(i/13)*14,r:5.2,fill:r[1]?C.high:C.low},s)});
+  }})();
+
+/* ---------- Demo 1: variables ---------- */
+(function(){const V=[["Study","Which programme (4 groups)","cat","1 = Psychology … 4 = Administration"],["High_low","Hat thrown high or low","cat","0 = Low, 1 = High"],["Earnings","Part-time job money this year","num","e.g. 72.69"],["Earnings_lastyear","Same students, last year","num","e.g. 23.32"]];
+  const box=document.getElementById("varcards");let done=0;
+  V.forEach(v=>{const d=document.createElement("div");d.className="vc";
+    d.innerHTML=`<code>${v[0]}</code><div style="font-size:.88rem;margin-top:4px">${v[1]}</div><div style="font-size:.78rem;color:var(--muted)">${v[3]}</div><div class="choices"><button class="btn" data-a="cat">🏷️ Label</button><button class="btn" data-a="num">📏 Number</button></div>`;
+    d.querySelectorAll("button").forEach(b=>b.onclick=()=>{d.querySelectorAll("button").forEach(x=>x.className="btn");
+      const ok=b.dataset.a===v[2];b.className="btn "+(ok?"good":"wrong");
+      if(ok){d.style.background=v[2]==="cat"?"var(--cat-soft)":"var(--num-soft)";}
+      const fb=document.getElementById("d1fb");fb.hidden=false;fb.className="fb "+(ok?"ok":"no");
+      fb.textContent=ok?(v[2]==="cat"?`✓ ${v[0]} is a label: the numbers are just codes. You can't average "Psychology + Sociology". You count it.`:`✓ ${v[0]} is a real amount. An average of money makes sense, so t-tests are possible.`)
+        :(v[2]==="cat"?`Not quite. ${v[0]} has numbers in SPSS, but they are only codes for names. Would "average study = 2.5" mean anything?`:`Not quite. ${v[0]} is an amount of money, so you can average it.`);
+    });box.appendChild(d)});
+})();
+
+/* ---------- Demo 2: describe or test ---------- */
+function quiz(listId,scoreId,items,options,render){
+  const list=document.getElementById(listId);let score=0,answered=0;
+  items.forEach(it=>{const d=document.createElement("div");d.className="scen";
+    d.innerHTML=`<p>${it.q}</p><div class="row"></div><div class="fb" hidden></div>`;
+    const row=d.querySelector(".row"),fb=d.querySelector(".fb");
+    options.forEach(o=>{const b=document.createElement("button");b.className="btn";b.textContent=o[1];b.onclick=()=>{
+      if(d.dataset.done)return; d.dataset.done=1; answered++;
+      const ok=o[0]===it.a; if(ok)score++;
+      row.querySelectorAll("button").forEach(x=>{x.disabled=true});
+      b.className="btn "+(ok?"good":"wrong");
+      if(!ok){[...row.children].forEach((x,i)=>{if(options[i][0]===it.a)x.className="btn good"})}
+      fb.hidden=false;fb.className="fb "+(ok?"ok":"no");fb.innerHTML=(ok?"✓ ":"✗ ")+it.why;
+      document.getElementById(scoreId).textContent=`${score} / ${answered} correct`;
+    };row.appendChild(b)});list.appendChild(d)});
+}
+quiz("d2list","d2score",[
+ {q:"What is the <b>median</b> of Earnings for Sociology students?",a:"d",why:"\"What is the median\" only asks you to summarise. No p-value, no comparison."},
+ {q:"Do Psychology students earn <b>significantly</b> more than Administration students?",a:"t",why:"\"Significantly\" always means a statistical test."},
+ {q:"What <b>percentage</b> of Sociology students threw their hat high?",a:"d",why:"A percentage is a description. Crosstabs, row %."},
+ {q:"<b>Is there a relation</b> between study and throwing high? Give the <b>p-value</b>.",a:"t",why:"\"p-value\" is the giveaway. (That would be a chi-square test of independence.)"},
+ {q:"What would the <b>expected number</b> of high-throwing Psychology students be if study and throwing were unrelated?",a:"d",why:"It uses test logic, but it only asks for one calculated count, no p-value."},
+ {q:"Provide the <b>test statistic</b> comparing this year's and last year's earnings.",a:"t",why:"\"Test statistic\" = the t of a paired t-test."}
+],[["d","📊 Describe"],["t","🧪 Test"]]);
+
+/* ---------- Demo 3: wizard ---------- */
+(function(){const w=document.getElementById("wiz");
+ const R={
+  descNum:["📊 Compare Means › Means","Put the number in Dependent List and the group variable in Independent List. Read the mean/SD in the right row. (Q1, Q2)"],
+  descOne:["📊 Descriptive Statistics › Frequencies","Read the Valid Percent and divide by 100 for a proportion. (Q5)"],
+  descTwo:["📊 Descriptive Statistics › Crosstabs","Tick Row % for relative risk, Expected for expected counts. (Q6, Q7)"],
+  ind:["🧪 Independent-Samples T Test","Test variable = the number, Grouping = the 2-group variable. Check Levene first. (Q3)"],
+  pair:["🧪 Paired-Samples T Test","Put the two measurements in one pair. Read t and Sig. (2-tailed). (Q4)"],
+  claim:["🧪 Legacy Dialogs › Chi-square (goodness-of-fit)","Enter the claimed % as expected values in code order. (Q8)"],
+  indep:["🧪 Crosstabs › Statistics › Chi-square","Chi-square test of independence between two categorical variables."]
+ };
+ const T={q:"Does the question ask you to describe, or to test/compare?",o:[["📊 Describe (mean, SD, %, expected, RR)",{q:"What are you describing?",o:[["A number, maybe per group",R.descNum],["One category (a % of everyone)",R.descOne],["Two categories together (% per group, RR, expected)",R.descTwo]]}],["🧪 Test (compare, p-value, claim)",{q:"Is the outcome a number or a category?",o:[["📏 Number (like Earnings)",{q:"Same people twice, or two different groups?",o:[["Two different groups",R.ind],["Same people, two measurements",R.pair]]}],["🏷️ Category (like High_low)",{q:"Against a claimed value, or related to another category?",o:[["Against a claimed %",R.claim],["Related to another category",R.indep]]}]]}]]};
+ function show(node,trail){w.innerHTML="";
+  const tr=document.createElement("div");tr.className="path";trail.forEach(t=>{const s=document.createElement("span");s.textContent=t;tr.appendChild(s)});if(trail.length)w.appendChild(tr);
+  if(Array.isArray(node)){const d=document.createElement("div");d.className="answer";d.innerHTML=`<div><div class="big" style="font-size:1.4rem">${node[0]}</div><small>${node[1]}</small></div>`;w.appendChild(d)}
+  else{const p=document.createElement("p");p.innerHTML=`<b>${node.q}</b>`;w.appendChild(p);const r=document.createElement("div");r.className="row";
+   node.o.forEach(o=>{const b=document.createElement("button");b.className="btn";b.textContent=o[0];b.onclick=()=>show(o[1],trail.concat(o[0]));r.appendChild(b)});w.appendChild(r)}
+  if(trail.length){const b=document.createElement("button");b.className="btn";b.style.marginTop="10px";b.textContent="↺ Start again";b.onclick=()=>show(T,[]);w.appendChild(b)}
+ }show(T,[]);})();
+
+/* ---------- independent vs paired mini visuals ---------- */
+(function(){const g=document.getElementById("indepDots");
+ for(let i=0;i<12;i++){el("circle",{cx:40+(i%4)*26,cy:45+Math.floor(i/4)*26,r:9,fill:C.low},g)}
+ for(let i=0;i<9;i++){el("circle",{cx:205+(i%3)*28,cy:45+Math.floor(i/3)*26,r:9,fill:C.high},g)}
+ const p=document.getElementById("pairDots");
+ for(let i=0;i<4;i++){const y=40+i*23;el("circle",{cx:80,cy:y,r:9,fill:C.num},p);el("circle",{cx:240,cy:y,r:9,fill:C.num},p);el("path",{d:`M92 ${y} L228 ${y}`,stroke:C.gold,"stroke-width":2,"stroke-dasharray":"4 3"},p);txt(p,160,y-4,"same person",{"font-size":10,"text-anchor":"middle",fill:C.muted})}
+})();
+
+/* ---------- Demo 4 ---------- */
+quiz("d4list","d4score",[
+ {q:"Stress scores of 30 students measured in week 1 and again in exam week.",a:"p",why:"Same 30 students twice → paired."},
+ {q:"Earnings of students who threw high vs students who threw low.",a:"i",why:"Each student is either high or low, never both → independent."},
+ {q:"Reaction time of left hand vs right hand, for each participant.",a:"p",why:"Each person gives both scores → paired."},
+ {q:"Exam grades of Psychology students vs Sociology students.",a:"i",why:"Two separate groups of people → independent."},
+ {q:"Mood of twins, one twin in the therapy group and one in the control group.",a:"p",why:"Matched pairs (twins) count as paired: each score has a natural partner."},
+ {q:"Earnings this year vs earnings last year for our 100 students.",a:"p",why:"This is Question 4: same students, two years → paired."}
+],[["i","👥 Different people (independent)"],["p","🔁 Same people (paired)"]]);
+
+/* ---------- Question cards ---------- */
+const QS=[
+ {n:1,type:"d",q:`What are the <span class="hc">mean</span> <span class="hv">earnings</span> for <span class="hg">an Administration student</span>? <span class="hf">Give this mean in 3 decimals.</span>`,
+  plain:"Take only the 25 Administration students and average their Earnings (this year).",
+  three:["Describe: \"what are the mean\"","Earnings = number, so an average works","Split by Study; read the Administration row"],
+  vis:"q1",
+  path:["Analyze","Compare Means","Means…"],
+  steps:["Move <b>Earnings</b> to <i>Dependent List</i>.","Move <b>Study</b> to <i>Independent List</i>.","Click OK."],
+  out:{h:["Study","Mean","N","Std. Deviation"],r:[["Psychology","92.327","25","29.936"],["Pedagogical Sciences","101.019","25","23.253"],["Sociology","101.361","25","36.580"],["Administration","86.464","25","30.133"],["Total","95.293","100","30.534"]],hl:3},
+  ans:"86.464",ansNote:"If SPSS shows 2 decimals, double-click the table and then the cell to see more.",
+  hook:"Means is a sorting machine: it drops each student in their study's bucket and averages each bucket.",
+  friend:"\"I asked SPSS for the average Earnings, split by study. In the Administration row the mean is 86.464.\""},
+ {n:2,type:"d",q:`What is the <span class="hc">standard deviation</span> of <span class="hv">earnings last year</span> in <span class="hg">the group that threw their baret up low</span>? <span class="hf">(3 decimals)</span>`,
+  plain:"How spread out were last year's earnings among the 57 students who threw low?",
+  three:["Describe: \"what is the standard deviation\"","Earnings_lastyear (not Earnings!)","Split by High_low; read the Low row"],
+  vis:"q2",
+  path:["Analyze","Compare Means","Means…"],
+  steps:["Dependent List: <b>Earnings_lastyear</b>.","Independent List: <b>High_low</b>.","Click OK (Std. Deviation is in the default output)."],
+  out:{h:["High_low","Mean","N","Std. Deviation"],r:[["Low","93.181","57","37.378"],["High","90.628","43","44.559"],["Total","92.083","100","40.426"]],hl:0,hlCol:3},
+  ans:"37.378",
+  trap:"You wrote 30.637. That is the SD of <b>this year's</b> Earnings in the Low group. Right group, wrong variable. Flip the switch in the visual to see both.",
+  hook:"Standard deviation is how far the typical student stands from the group's average.",
+  friend:"\"I split last year's earnings by high/low throwers. Among the low throwers the standard deviation is 37.378.\""},
+ {n:3,type:"t",q:`<span class="hc">Compare</span> the students that threw their barets <span class="hg">high</span> and those that threw it <span class="hg">low</span> in terms of their <span class="hv">earnings</span>. Provide the relevant <span class="hc">test statistic</span> <span class="hf">(2 decimals)</span>.`,
+  plain:"Do high throwers and low throwers earn different amounts on average? Give the t value.",
+  three:["Test: \"compare\" + \"test statistic\"","Earnings = number → compare means","High and Low are different people → independent"],
+  vis:"q3",
+  path:["Analyze","Compare Means","Independent-Samples T Test…"],
+  steps:["Test Variable(s): <b>Earnings</b>.","Grouping Variable: <b>High_low</b> → <i>Define Groups</i>: Group 1 = <b>0</b>, Group 2 = <b>1</b> → Continue.","Click OK.","First read <b>Levene's test</b>: Sig. = .969 &gt; .05 → use the row <i>Equal variances assumed</i>."],
+  out:{h:["","Levene F","Levene Sig.","t","df","Sig. (2-tailed)","Mean Diff."],r:[["Equal variances assumed",".002",".969","−.845","98",".400","−5.217"],["Equal variances not assumed","","","−.845","90.81",".400","−5.217"]],hl:0,hlCol:3},
+  ans:"t = −0.84",ansNote:"The sign depends on which group you enter first (0,1 → −0.84; 1,0 → +0.84). p = .400: no significant difference.",
+  trap:"You wrote 0.756. That number isn't in this output. The test statistic sits in the <b>t</b> column of the top row: −.845 → −0.84.",
+  key:"A t value is signal divided by noise: the gap between the two means, divided by how much that gap would wobble by chance.",
+  hook:"Levene is the bouncer at the door: he checks if both groups have similar spread and sends you to the top row (Sig. > .05) or the bottom row (Sig. < .05).",
+  friend:"\"High throwers earned about 5 more on average, but the spread is so big that this gap is well within chance. t = −0.84, p = .40, so no real difference.\""},
+ {n:4,type:"t",q:`Are the <span class="hv">earnings this year</span> <span class="hc">different</span> from those <span class="hv">last year</span>? Provide the <span class="hc">p-value</span> <span class="hf">(3 decimals)</span>.`,
+  plain:"The same 100 students: did their earnings change between last year and this year?",
+  three:["Test: \"different\" + \"p-value\"","Both variables are numbers","Same students twice → paired"],
+  vis:"q4",
+  path:["Analyze","Compare Means","Paired-Samples T Test…"],
+  steps:["Put <b>Earnings</b> as Variable 1 and <b>Earnings_lastyear</b> as Variable 2 in Pair 1.","Click OK.","Read <i>Sig. (2-tailed)</i> in the Paired Samples Test table."],
+  out:{h:["Pair 1","Mean diff.","SD","SE","95% CI","t","df","Sig. (2-tailed)"],r:[["Earnings − Earnings_lastyear","3.210","27.453","2.745","−2.238 to 8.657","1.169","99",".245"]],hl:0,hlCol:7},
+  ans:"p = .245",ansNote:"Your answer was correct ✓. p > .05 and the 95% CI includes 0: no significant change.",
+  hook:"Paired = one difference score per student. SPSS then asks: is the average difference far from zero?",
+  friend:"\"For each student I subtract last year from this year. The average change is +3.2, but it jumps around a lot, so p = .245: no real change.\""},
+ {n:5,type:"d",q:`What is the <span class="hc">proportion</span> of <span class="hg">students that threw their baret up high</span>? <span class="hf">(2 decimals)</span>`,
+  plain:"Out of all 100 students, what share threw high? Write it between 0 and 1.",
+  three:["Describe: \"what is the proportion\"","High_low = category → count","One variable, everybody → Frequencies"],
+  vis:"q5",
+  path:["Analyze","Descriptive Statistics","Frequencies…"],
+  steps:["Move <b>High_low</b> to Variable(s).","Click OK.","Take <i>Valid Percent</i> for High and divide by 100."],
+  out:{h:["High_low","Frequency","Percent","Valid Percent"],r:[["Low","57","57.0","57.0"],["High","43","43.0","43.0"],["Total","100","100.0","100.0"]],hl:1,hlCol:3},
+  ans:"0.43",ansNote:"A proportion, so 0.43, not 43 or 43%.",
+  hook:"Percent is out of 100; proportion is out of 1. Move the decimal point two steps left.",
+  friend:"\"43 of the 100 students threw high, so the proportion is 0.43.\""},
+ {n:6,type:"d",q:`What is the <span class="hc">Relative Risk (RR)</span> of <span class="hg">throwing high</span> for <span class="hg">Psychology students vs students of Pedagogical Sciences</span>? <span class="hf">(3 decimals)</span>`,
+  plain:"How many times more likely is a Psychology student to throw high, compared with a Pedagogical Sciences student?",
+  three:["Describe: \"what is the RR\"","Two categories (Study × High_low)","Row % per study, then divide"],
+  vis:"q6",
+  path:["Analyze","Descriptive Statistics","Crosstabs…"],
+  steps:["Row(s): <b>Study</b>. Column(s): <b>High_low</b>.","<i>Cells…</i> → tick <b>Row</b> percentages (and <b>Expected</b>, for Q7) → Continue → OK.","RR = % High in Psychology ÷ % High in Pedagogical Sciences.","Optional SPSS route: Data › Select Cases (Study ≤ 2) → Crosstabs › Statistics › <b>Risk</b> → row \"For cohort High_low = High\"."],
+  out:{h:["Study","Low count (row %)","High count (row %)","Total"],r:[["Psychology","15 (60.0%)","10 (40.0%)","25"],["Pedagogical Sciences","16 (64.0%)","9 (36.0%)","25"],["Sociology","16 (64.0%)","9 (36.0%)","25"],["Administration","10 (40.0%)","15 (60.0%)","25"]],hl:-1,hlCells:[[0,2],[1,2]]},
+  ans:"RR = 1.111",ansNote:"0.400 ÷ 0.360 = 1.111. The group named first goes on top of the fraction.",
+  hook:"Relative risk is a ratio of two chances: \"my chance\" over \"your chance\".",
+  friend:"\"40% of Psychology students threw high and 36% of Pedagogy students did. 40 divided by 36 is 1.111, so Psychology students were about 11% more likely to throw high.\""},
+ {n:7,type:"d",q:`<span class="hc">If there were no relation</span> between study and throwing high or low, what would be the <span class="hc">expected number</span> of <span class="hg">Administration students who threw their baret low</span>? <span class="hf">(1 decimal)</span>`,
+  plain:"Imagine study makes no difference. Then every study should have the same 57% low throwers as the whole sample. How many of Administration's 25 would that be?",
+  three:["Describe one number from chi-square logic","Two categories (Study × High_low)","Crosstabs → Expected count"],
+  vis:"q7",
+  path:["Analyze","Descriptive Statistics","Crosstabs…","Cells","Expected"],
+  steps:["Same crosstab as Q6, with <b>Expected</b> ticked.","Find the cell Administration × Low, line \"Expected Count\".","By hand: row total × column total ÷ N."],
+  out:{h:["Administration","Low","High","Total"],r:[["Count","10","15","25"],["Expected Count","14.3","10.8","25.0"]],hl:-1,hlCells:[[1,1]]},
+  ans:"14.3",ansNote:"25 × 57 ÷ 100 = 14.25 → 14.3. Observed was only 10.",
+  hook:"Expected = \"fair share\": the group's size times the overall rate.",
+  friend:"\"57% of everyone threw low. If study didn't matter, 57% of the 25 Administration students would too: 14.25, so 14.3.\""},
+ {n:8,type:"t",q:`Somebody <span class="hc">claims</span> that <span class="hg">60% of all students will throw their baret high</span>. <span class="hc">Is this person right?</span> Or should we reject the claim? Provide the <span class="hc">p-value</span> <span class="hf">(3 decimals)</span>.`,
+  plain:"We saw 43% high. Is that far enough from the claimed 60% to say the claim is wrong?",
+  three:["Test: \"claim\", \"is this person right\", \"p-value\"","High_low = category → proportion","One variable vs a claimed value → goodness-of-fit"],
+  vis:"q8",
+  path:["Analyze","Nonparametric Tests","Legacy Dialogs","Chi-square…"],
+  steps:["Test Variable List: <b>High_low</b>.","Expected Values → <b>Values</b>. Type them in code order: first code 0 (Low) = <b>40</b>, Add; then code 1 (High) = <b>60</b>, Add.","Click OK. Read <i>Asymp. Sig.</i>"],
+  out:{h:["High_low","Observed N","Expected N","Residual"],r:[["Low","57","40.0","17.0"],["High","43","60.0","−17.0"],["Chi-Square = 12.042","df = 1","Asymp. Sig. = .001",""]],hl:-1,hlCells:[[2,2]]},
+  ans:"p = .001",ansNote:"p < .05 → reject the claim. Binomial alternative: Legacy Dialogs › Binomial, test proportion 0.40 (it applies to the first category in the data, Low). Same conclusion.",
+  trap:"The expected values follow the <b>code order</b>: 0 (Low) first. Typing 60 then 40 tests the opposite claim.",
+  hook:"Goodness-of-fit asks: does reality fit the promise? Big gaps between observed and expected = poor fit.",
+  friend:"\"If 60% threw high, we'd expect 60 high throwers. We saw only 43. A gap that large happens by chance only about 1 in 1,000 times, so I reject the claim.\""}
+];
+
+function outTable(o){let h='<div class="tw"><table><thead><tr>'+o.h.map((c,i)=>`<th${i?' class="n"':''}>${c}</th>`).join("")+'</tr></thead><tbody>';
+ o.r.forEach((r,ri)=>{h+='<tr>'+r.map((c,ci)=>{const isHl=(ri===o.hl&&(o.hlCol===undefined||o.hlCol===ci))||(o.hlCells||[]).some(p=>p[0]===ri&&p[1]===ci);return `<td class="${ci?'n':''}${isHl?' hl':''}">${c}</td>`}).join("")+'</tr>'});
+ return h+'</tbody></table></div><div class="cap">Yellow cell = your answer.</div>'}
+
+const qs=document.getElementById("qs");
+QS.forEach(q=>{const d=document.createElement("article");d.className="q";d.id="q"+q.n;
+ d.innerHTML=`<div class="qhead"><div class="qnum">${q.n}</div><span class="tag ${q.type==="t"?"t-test":"t-desc"}">${q.type==="t"?"🧪 Test":"📊 Describe"}</span></div>
+ <div class="qtext">${q.q}</div>
+ <div class="plain"><b>🔍 What it's really asking</b><p>${q.plain}</p></div>
+ <div class="sub">🧭 Which analysis? (the 3 questions)</div>
+ <div class="three"><div><b>1 · Describe or test?</b>${q.three[0]}</div><div><b>2 · Which variable?</b>${q.three[1]}</div><div><b>3 · Groups / people?</b>${q.three[2]}</div></div>
+ <div class="sub">📈 See it</div><div class="vis" id="vis${q.n}"></div>
+ ${q.key?`<div class="key"><div class="star">★</div><div><b class="lab">Key insight</b><p>${q.key}</p></div></div>`:""}
+ <div class="sub">🖱️ SPSS, click by click</div>
+ <div class="path">${q.path.map(p=>`<span>${p}</span>`).join("<i>›</i>")}</div>
+ <ol class="steps">${q.steps.map(s=>`<li>${s}</li>`).join("")}</ol>
+ <div class="sub">📋 What the output shows</div>${outTable(q.out)}
+ <div class="answer"><div class="big">${q.ans}</div><small>${q.ansNote||""}</small></div>
+ ${q.trap?`<div class="trap"><b>⚠️ Watch out</b><p>${q.trap}</p></div>`:""}
+ <div class="grid2"><div class="hook"><b>🪝 Memory hook</b><p>${q.hook}</p></div><div class="friend"><b>🗣️ Explain it to a friend</b><p>${q.friend}</p></div></div>`;
+ qs.appendChild(d)});
+
+/* ---------- visual helpers ---------- */
+function svgIn(id,w,h,label){const s=el("svg",{viewBox:`0 0 ${w} ${h}`,role:"img","aria-label":label});document.getElementById(id).appendChild(s);return s}
+function xAxis(s,x0,x1,y,min,max,ticks,unit){const sc=v=>x0+(v-min)/(max-min)*(x1-x0);el("line",{x1:x0,x2:x1,y1:y,y2:y,stroke:C.muted},s);
+ ticks.forEach(t=>{el("line",{x1:sc(t),x2:sc(t),y1:y,y2:y+5,stroke:C.muted},s);txt(s,sc(t),y+18,t,{"font-size":11,"text-anchor":"middle",fill:C.muted})});
+ if(unit)txt(s,(x0+x1)/2,y+34,unit,{"font-size":11,"text-anchor":"middle",fill:C.muted});return sc}
+
+/* Q1 bar chart */
+(function(){const s=svgIn("vis1",700,245,"Mean earnings per study, Administration highlighted");
+ const m=[1,2,3,4].map(st=>mean(D.filter(r=>r[0]===st).map(r=>r[2])));
+ const sc=xAxis(s,170,660,200,0,120,[0,20,40,60,80,100,120],"mean Earnings this year");
+ m.forEach((v,i)=>{const y=20+i*44,isA=i===3;
+  el("rect",{x:170,y,width:sc(v)-170,height:30,rx:4,fill:isA?C.gold:"#e6dcc8"},s);
+  txt(s,160,y+20,STUDY[i+1],{"font-size":13,"text-anchor":"end","font-weight":isA?700:400});
+  txt(s,sc(v)+6,y+20,f3(v),{"font-size":13,"font-weight":isA?700:400,fill:isA?C.goldD:C.ink})});
+})();
+
+/* Q2 strip plot with toggle */
+(function(){const host=document.getElementById("vis2");
+ const bar=document.createElement("div");bar.className="row";bar.innerHTML=`<span style="font-size:.9rem">Variable shown:</span><button class="btn on" data-v="3">Earnings_lastyear ✓ (asked)</button><button class="btn" data-v="2">Earnings (this year) ✗</button>`;host.appendChild(bar);
+ const s=svgIn("vis2",700,235,"Strip plot of earnings for Low and High throwers with mean and plus/minus one SD");
+ const note=document.createElement("div");note.className="readout";host.appendChild(note);
+ function draw(v){while(s.firstChild)s.removeChild(s.firstChild);
+  const sc=xAxis(s,90,680,190,0,200,[0,25,50,75,100,125,150,175,200],v===3?"Earnings last year":"Earnings this year");
+  [[0,"Low",C.low,55],[1,"High",C.high,130]].forEach(([g,lab,col,y])=>{const a=D.filter(r=>r[1]===g).map(r=>r[v]);const m=mean(a),s1=sd(a);
+   el("rect",{x:sc(m-s1),y:y-26,width:sc(m+s1)-sc(m-s1),height:52,fill:g===0?"#fff1bf":"#f7ece4",stroke:g===0?C.gold:"none",rx:6},s);
+   a.forEach((x,i)=>el("circle",{cx:sc(x),cy:y+((i*37)%31)-15,r:3.6,fill:col,"fill-opacity":.8},s));
+   el("line",{x1:sc(m),x2:sc(m),y1:y-30,y2:y+30,stroke:C.ink,"stroke-width":2},s);
+   txt(s,80,y+5,lab,{"font-size":13,"text-anchor":"end","font-weight":700,fill:col});
+   if(g===0){txt(s,sc(m+s1)+6,y-12,"SD = "+f3(s1),{"font-size":13,"font-weight":700,fill:v===3?C.ok:C.bad})}
+  });
+  note.innerHTML=v===3?"✓ Low group, Earnings_lastyear: SD = <b>37.378</b>. The shaded band is mean ± 1 SD.":"✗ This is <b>this year's</b> Earnings. Low group SD = 30.637, the number on your sheet. The question asked for last year.";
+ }
+ bar.querySelectorAll("button").forEach(b=>b.onclick=()=>{bar.querySelectorAll("button").forEach(x=>x.classList.remove("on"));b.classList.add("on");draw(+b.dataset.v)});draw(3);
+})();
+
+/* Q3 dots + Demo 5 slider */
+(function(){const host=document.getElementById("vis3");
+ const s=svgIn("vis3",700,185,"Earnings of low and high throwers with their means");
+ const sc=xAxis(s,90,680,140,20,180,[20,40,60,80,100,120,140,160,180],"Earnings this year");
+ [[0,"Low",C.low,40],[1,"High",C.high,95]].forEach(([g,lab,col,y])=>{const a=D.filter(r=>r[1]===g).map(r=>r[2]),m=mean(a);
+  a.forEach((x,i)=>el("circle",{cx:sc(x),cy:y+((i*29)%25)-12,r:3.6,fill:col,"fill-opacity":.8},s));
+  el("line",{x1:sc(m),x2:sc(m),y1:y-22,y2:y+22,stroke:C.ink,"stroke-width":2.5},s);txt(s,sc(m)+5,y-14,"mean "+m.toFixed(1),{"font-size":11,"font-weight":700});
+  txt(s,80,y+5,lab,{"font-size":13,"text-anchor":"end","font-weight":700,fill:col})});
+ const cap=document.createElement("div");cap.className="cap";cap.textContent="The means are close together while the dots are spread widely. That already tells you the t will be small.";host.appendChild(cap);
+ const demo=document.createElement("div");demo.className="demo";
+ demo.innerHTML=`<div class="dh"><span class="no">DEMO 5</span><h3>📡 t = signal ÷ noise</h3></div><p>Move the sliders. Start values are the real data. When does the difference become significant (|t| &gt; 1.98)?</p>
+ <label class="sl" for="sDiff">Signal: gap between the means = <b id="vDiff"></b></label><input type="range" id="sDiff" min="0" max="30" step="0.1" value="5.2">
+ <label class="sl" for="sSd">Noise: spread (SD) inside the groups = <b id="vSd"></b></label><input type="range" id="sSd" min="5" max="60" step="0.1" value="30.6">
+ <svg id="tGauge" viewBox="0 0 600 90" role="img" aria-label="t gauge"></svg><div class="readout" id="tRead"></div>`;
+ host.appendChild(demo);
+ const g=demo.querySelector("#tGauge");
+ function upd(){const diff=+demo.querySelector("#sDiff").value,s1=+demo.querySelector("#sSd").value;const se=s1*Math.sqrt(1/57+1/43),t=diff/se,p=2*(1-0.5*(1+erf(t/Math.SQRT2)));
+  demo.querySelector("#vDiff").textContent=diff.toFixed(1);demo.querySelector("#vSd").textContent=s1.toFixed(1);
+  while(g.firstChild)g.removeChild(g.firstChild);const sc=v=>20+Math.min(v,6)/6*560;
+  el("rect",{x:20,y:30,width:560,height:22,rx:11,fill:"#efe6d3"},g);el("rect",{x:sc(1.98),y:30,width:580-sc(1.98),height:22,rx:0,fill:"#e1f2e6"},g);
+  el("line",{x1:sc(1.98),x2:sc(1.98),y1:24,y2:58,stroke:C.ok,"stroke-width":2,"stroke-dasharray":"4 3"},g);txt(g,sc(1.98),18,"1.98 = significance line",{"font-size":11,"text-anchor":"middle",fill:C.ok});
+  el("circle",{cx:sc(t),cy:41,r:10,fill:t>1.98?C.ok:C.gold,stroke:C.ink},g);txt(g,sc(t),78,"|t| = "+t.toFixed(2),{"font-size":12,"text-anchor":"middle","font-weight":700});
+  [0,1,2,3,4,5,6].forEach(v=>txt(g,sc(v),66,v===6?"6+":v,{"font-size":9,"text-anchor":"middle",fill:C.muted}));
+  demo.querySelector("#tRead").innerHTML=`SE = ${s1.toFixed(1)} × √(1/57 + 1/43) = ${se.toFixed(2)} &nbsp;→&nbsp; t = ${diff.toFixed(1)} ÷ ${se.toFixed(2)} = <b>${t.toFixed(2)}</b> &nbsp;·&nbsp; p ≈ ${p<.001?"< .001":p.toFixed(3)} → ${t>1.98?"<b style='color:var(--ok)'>significant</b>":"not significant"}`}
+ demo.querySelectorAll("input").forEach(i=>i.oninput=upd);upd();
+})();
+
+/* Q4 histogram of differences */
+(function(){const s=svgIn("vis4",700,245,"Histogram of each student's change in earnings");
+ const diffs=D.map(r=>r[2]-r[3]);const bins={};diffs.forEach(v=>{const b=Math.floor(v/10)*10;bins[b]=(bins[b]||0)+1});
+ const sc=xAxis(s,60,680,200,-80,80,[-80,-60,-40,-20,0,20,40,60,80],"change per student: this year − last year");
+ const maxc=Math.max(...Object.values(bins));const ys=c=>200-c/maxc*150;
+ Object.entries(bins).forEach(([b,c])=>{b=+b;if(b<-80||b>=80)return;el("rect",{x:sc(b)+1,y:ys(c),width:sc(b+10)-sc(b)-2,height:200-ys(c),fill:b<0?"#c9d4e6":"#e8d4b0"},s);txt(s,(sc(b)+sc(b+10))/2,ys(c)-4,c,{"font-size":10,"text-anchor":"middle",fill:C.muted})});
+ const out=diffs.filter(v=>v<-80||v>=80).length;
+ el("line",{x1:sc(0),x2:sc(0),y1:30,y2:200,stroke:C.ink,"stroke-width":1.5,"stroke-dasharray":"5 4"},s);txt(s,sc(0)-4,26,"0 = no change",{"font-size":11,"text-anchor":"end"});
+ const m=mean(diffs);el("line",{x1:sc(m),x2:sc(m),y1:30,y2:200,stroke:C.goldD,"stroke-width":2.5},s);txt(s,sc(m)+4,26,"mean change = +"+m.toFixed(2),{"font-size":11,fill:C.goldD,"font-weight":700});
+ const cap=document.createElement("div");cap.className="cap";cap.textContent=`Each bar counts students whose earnings changed by that amount${out?` (${out} extreme value${out>1?"s":""} beyond ±80 not drawn)`:""}. The average change (+3.2) sits right next to zero, while the changes spread widely on both sides: p = .245.`;document.getElementById("vis4").appendChild(cap);
+})();
+
+/* Q5 waffle */
+(function(){const s=svgIn("vis5",700,240,"100 squares, 43 coloured for high throwers");
+ for(let i=0;i<100;i++){const col=i%10,row=Math.floor(i/10);el("rect",{x:20+col*21,y:14+row*21,width:18,height:18,rx:3,fill:i<43?C.high:"#e6ddd0"},s)}
+ txt(s,270,70,"43 of 100 squares",{"font-size":22,"font-weight":700,fill:C.high,"font-family":"Cormorant Garamond, serif"});
+ txt(s,270,104,"Percent  = 43.0 %",{"font-size":15});
+ txt(s,270,132,"Proportion = 43 ÷ 100 = 0.43",{"font-size":15,"font-weight":700});
+ txt(s,270,170,"Proportion lives between 0 and 1.",{"font-size":13,fill:C.muted});
+})();
+
+/* Q6 two rows of dots */
+(function(){const s=svgIn("vis6",700,210,"Psychology 10 of 25 high, Pedagogical Sciences 9 of 25 high");
+ [[1,"Psychology",20],[2,"Pedagogical Sc.",95]].forEach(([st,lab,y])=>{const hi=D.filter(r=>r[0]===st&&r[1]).length;
+  txt(s,0,y+16,lab,{"font-size":13,"font-weight":700});
+  for(let i=0;i<25;i++)el("circle",{cx:140+i*15,cy:y+11,r:6,fill:i<hi?C.high:"#e6ddd0"},s);
+  txt(s,530,y+16,`${hi} / 25 = ${(hi/25).toFixed(3)}`,{"font-size":15,"font-weight":700,fill:C.high})});
+ el("line",{x1:520,x2:690,y1:70,y2:70,stroke:C.ink,"stroke-width":2},s);
+ txt(s,605,165,"RR = 0.400 ÷ 0.360 = 1.111",{"font-size":17,"font-weight":700,"text-anchor":"middle",fill:C.goldD});
+ txt(s,140,165,"top of the fraction = the group named first",{"font-size":12,fill:C.muted});
+ txt(s,140,185,"bottom = the comparison group (\"vs …\")",{"font-size":12,fill:C.muted});
+})();
+
+/* Q7 Demo 6: clickable crosstab */
+(function(){const host=document.getElementById("vis7");
+ const ct=[1,2,3,4].map(st=>[0,1].map(h=>D.filter(r=>r[0]===st&&r[1]===h).length));
+ const demo=document.createElement("div");demo.className="demo";
+ demo.innerHTML=`<div class="dh"><span class="no">DEMO 6</span><h3>🧮 Expected-count machine</h3></div><p>Click any white cell. The machine shows the "fair share" it would hold if study made no difference.</p><div class="tw" id="ctw"></div><div class="readout" id="ctr">Tip: click Administration × Low. That is Question 7.</div>`;
+ host.appendChild(demo);
+ let h='<table><thead><tr><th>Study</th><th class="n">Low</th><th class="n">High</th><th class="n">Row total</th></tr></thead><tbody>';
+ ct.forEach((r,i)=>{h+=`<tr><td>${STUDY[i+1]}</td>`+r.map((c,j)=>`<td class="n"><button class="btn" data-i="${i}" data-j="${j}" style="padding:3px 10px">${c}</button></td>`).join("")+`<td class="n">25</td></tr>`});
+ h+='<tr><td><b>Column total</b></td><td class="n"><b>57</b></td><td class="n"><b>43</b></td><td class="n"><b>100</b></td></tr></tbody></table>';
+ demo.querySelector("#ctw").innerHTML=h;
+ demo.querySelectorAll("#ctw button").forEach(b=>b.onclick=()=>{demo.querySelectorAll("#ctw button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
+  const i=+b.dataset.i,j=+b.dataset.j,col=j?43:57,e=25*col/100;
+  demo.querySelector("#ctr").innerHTML=`${STUDY[i+1]} × ${j?"High":"Low"}: expected = row total × column total ÷ N = 25 × ${col} ÷ 100 = <b>${e.toFixed(2)} → ${e.toFixed(1)}</b> &nbsp;·&nbsp; observed = ${ct[i][j]} ${ct[i][j]<e?"(fewer than fair share)":ct[i][j]>e?"(more than fair share)":""}`});
+})();
+
+/* Q8 Demo 7: claim slider */
+(function(){const host=document.getElementById("vis8");
+ const demo=document.createElement("div");demo.className="demo";
+ demo.innerHTML=`<div class="dh"><span class="no">DEMO 7</span><h3>⚖️ Test any claim</h3></div><p>We observed <b>43</b> high throwers out of 100. Slide the claimed percentage and watch the gap, χ² and p change. Which claims survive (p &gt; .05)?</p>
+ <label class="sl" for="sClaim">Claimed % that throw high: <b id="vClaim"></b></label><input type="range" id="sClaim" min="20" max="80" step="1" value="60">
+ <svg id="clSvg" viewBox="0 0 600 170" role="img" aria-label="Observed versus expected high and low throwers"></svg><div class="readout" id="clRead"></div>`;
+ host.appendChild(demo);const g=demo.querySelector("#clSvg");
+ function upd(){const c=+demo.querySelector("#sClaim").value;demo.querySelector("#vClaim").textContent=c+"%";
+  const eH=c,eL=100-c,chi=(43-eH)**2/eH+(57-eL)**2/eL,p=chiP1(chi);
+  while(g.firstChild)g.removeChild(g.firstChild);const ys=v=>140-v*1.2;
+  [["Low",57,eL,110,C.low],["High",43,eH,350,C.high]].forEach(([lab,o,e,x,col])=>{
+   el("rect",{x,y:ys(o),width:60,height:140-ys(o),fill:col,rx:3},g);txt(g,x+30,ys(o)-5,"obs "+o,{"font-size":12,"text-anchor":"middle","font-weight":700});
+   el("rect",{x:x+70,y:ys(e),width:60,height:140-ys(e),fill:"none",stroke:C.ink,"stroke-width":2,"stroke-dasharray":"5 3",rx:3},g);txt(g,x+100,ys(e)-5,"exp "+e,{"font-size":12,"text-anchor":"middle"});
+   txt(g,x+65,160,lab,{"font-size":13,"text-anchor":"middle","font-weight":700})});
+  el("line",{x1:40,x2:560,y1:140,y2:140,stroke:C.muted},g);
+  const verdict=p<.05?"<b style='color:var(--bad)'>reject the claim</b>":"<b style='color:var(--ok)'>claim survives</b>";
+  demo.querySelector("#clRead").innerHTML=`χ² = (43 − ${eH})²/${eH} + (57 − ${eL})²/${eL} = <b>${chi.toFixed(3)}</b>, df = 1 &nbsp;→&nbsp; p = <b>${p<.0005?"< .001":p.toFixed(3)}</b> → ${verdict}`}
+ demo.querySelector("#sClaim").oninput=upd;upd();
+})();
+
+/* ---------- Demo 8 mixed practice ---------- */
+quiz("d8list","d8score",[
+ {q:"What is the mean of Earnings_lastyear for Sociology students?",a:"means",why:"Describe a number per group → Means (Earnings_lastyear by Study)."},
+ {q:"Is the proportion of students who throw high different from 50%?",a:"chi",why:"One category vs a claimed value → chi-square goodness-of-fit (expected 50 / 50), or Binomial with 0.50."},
+ {q:"Do high throwers earn a different amount last year than low throwers? Give the p-value.",a:"ind",why:"Number (Earnings_lastyear) compared across two different groups → Independent-samples t-test."},
+ {q:"What percentage of Administration students threw high?",a:"ct",why:"% within a group needs two categories together → Crosstabs with Row %."},
+ {q:"What proportion of the whole sample threw low?",a:"freq",why:"One category, the whole sample → Frequencies (0.57)."},
+ {q:"Did students earn more this year than last year? Give the test statistic.",a:"pair",why:"Same people, two measurements → Paired-samples t-test (t = 1.17)."},
+ {q:"What is the RR of throwing high for Administration vs Sociology students?",a:"ct",why:"Two row percentages divided → Crosstabs (0.600 ÷ 0.360 = 1.667)."},
+ {q:"What is the standard deviation of Earnings for Psychology students?",a:"means",why:"Spread of a number per group → Means (29.936)."}
+],[["means","Means"],["freq","Frequencies"],["ct","Crosstabs"],["ind","Independent t"],["pair","Paired t"],["chi","χ² goodness-of-fit"]]);
+
+/* copy syntax */
+document.getElementById("copySyn").onclick=()=>{const t=document.getElementById("syn").textContent,m=document.getElementById("copyMsg");
+ const sel=()=>{const r=document.createRange();r.selectNodeContents(document.getElementById("syn"));const s=getSelection();s.removeAllRanges();s.addRange(r);m.textContent="Selected. Press Ctrl/Cmd + C."};
+ try{navigator.clipboard.writeText(t).then(()=>m.textContent="Copied.",sel)}catch(e){sel()}};
+</script>
+
+</body></html>
